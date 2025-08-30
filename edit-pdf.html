@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Need to fill out a form or add an annotation? This tool lets you add new text to any page of your PDF file, directly in your browser." />
+    <title>Add Text to PDF Free | Edit PDF Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/edit-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Add Text to PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="edit-text">Text to add:</label>
+                        <input type="text" id="edit-text" value="Your Text Here">
+                        <label for="edit-page">Page Number:</label>
+                        <input type="number" id="edit-page" value="1" min="1">
+                        <label for="edit-size">Font Size:</label>
+                        <input type="number" id="edit-size" value="24" min="1">
+                    </div>
+                    <button id="process-button" disabled>Add Text</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content">
+                    <h1>Add Text to PDF</h1>
+                    <p>Need to fill out a form or add an annotation? This tool lets you add new text to any page of your PDF file, directly in your browser.</p>
+                    <h2>How to Add Text to a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF document.</li>
+                        <li>Enter the text you want to add, the page number, and the font size.</li>
+                        <li>Click 'Process Files'.</li>
+                        <li>A new PDF with your added text will be created for download.</li>
+                    </ol>
+                    <h2>Add Text FAQs</h2>
+                    <p><b>Can I move the text around?</b><br>Currently, you must specify the location programmatically. A visual editor is planned for a future update.</p>
+                    <p><b>Is this secure?</b><br>Yes, all edits happen in your browser, ensuring the confidentiality of your document.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const textToAddInput = document.getElementById('text-to-add');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+                statusArea.textContent = '';
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile || !textToAddInput.value) {
+                statusArea.textContent = 'Please select a file and enter the text to add.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Adding text...';
+
+            try {
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                const firstPage = pdfDoc.getPages()[0];
+                const { width, height } = firstPage.getSize();
+
+                firstPage.drawText(textToAddInput.value, {
+                    x: 50,
+                    y: height - 50,
+                    size: 24,
+                    font,
+                    color: rgb(0, 0, 0),
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'edited.pdf', 'application/pdf');
+                statusArea.textContent = 'Text added successfully!';
+            } catch (error) {
+                console.error('Error adding text:', error);
+                statusArea.textContent = 'An error occurred.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Reduce the file size of your JPG or PNG images with our free online optimizer. Perfect for making your images load faster on the web." />
+    <title>Compress JPG or PNG Free | Online Image Optimizer</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/image-compress.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Compress Image</h2>
+                    <form id="upload-form" action="https://my-pdf-backend.onrender.com/compress-image" method="POST" enctype="multipart/form-data">
+                        <div id="file-drop-zone"><p><b>Drag & Drop an image file here</b><br>or click to select</p></div>
+                        <input type="file" id="file-input" name="file" accept="image/jpeg,image/png" required hidden>
+                        <div id="file-list" style="margin-bottom: 20px;"></div>
+                        <div class="tool-options">
+                            <label for="compress-level">Compression Level:</label>
+                            <select id="compress-level" name="compressionLevel">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="process-button" disabled>Compress Image</button>
+                    </form>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Compress JPG or PNG</h1>
+                    <p>Reduce the file size of your JPG or PNG images with our free online optimizer. Perfect for making your images load faster on the web.</p>
+                    <h2>How to Compress an Image</h2>
+                    <ol>
+                        <li>Upload your JPG or PNG image.</li>
+                        <li>Choose a compression level (Low, Medium, High).</li>
+                        <li>Click 'Process Files' to start the optimization.</li>
+                        <li>Download your new, smaller image file.</li>
+                    </ol>
+                    <h2>Image Compression FAQs</h2>
+                    <p><b>What's the difference between compression levels?</b><br>High compression gives you the smallest file size but may reduce quality. Low compression provides better quality with a larger file size.</p>
+                    <p><b>Is my data safe?</b><br>Absolutely. Your files are uploaded via a secure connection and are deleted from our servers immediately after processing.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('upload-form');
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file) {
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+            } else {
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+            }
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            processButton.disabled = true;
+            statusArea.textContent = 'Compressing your image...';
+
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text || 'Network response was not ok') });
+                }
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'compressed-image.jpg';
+                if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(contentDisposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                statusArea.textContent = 'Your image has been compressed and downloaded.';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            })
+            .finally(() => {
+                processButton.disabled = false;
+            });
+        });
+    });
+    </script>
+</body>
+</html>

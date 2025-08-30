@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Convert your JPG and PNG images into a professional PDF document. Combine multiple images, adjust orientation and margins, and download your file for free." />
+    <title>JPG to PDF Free | Convert Images to PDF Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/jpg-to-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>JPG to PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop image files here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="image/jpeg,image/png" multiple hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="orientation">Orientation:</label>
+                        <select id="orientation" name="orientation">
+                            <option value="portrait" selected>Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                        <label for="margin">Margin:</label>
+                        <select id="margin" name="margin">
+                            <option value="none" selected>None</option>
+                            <option value="small">Small</option>
+                            <option value="big">Big</option>
+                        </select>
+                    </div>
+                    <button id="process-button" disabled>Convert to PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content">
+                    <h1>JPG to PDF Free</h1>
+                    <p>Convert your JPG and PNG images into a professional PDF document. Combine multiple images, adjust orientation and margins, and download your file for free.</p>
+                    <h2>How to Convert JPG to PDF</h2>
+                    <ol>
+                        <li>Upload one or more JPG or PNG images.</li>
+                        <li>Reorder the images as needed.</li>
+                        <li>Choose your orientation and margin size.</li>
+                        <li>Click 'Process Files' to create your PDF.</li>
+                        <li>Download your new PDF document.</li>
+                    </ol>
+                    <h2>JPG to PDF FAQs</h2>
+                    <p><b>Can I combine multiple images?</b><br>Yes, you can upload multiple images to combine them into a single PDF.</p>
+                    <p><b>Is this process secure?</b><br>Absolutely. All image processing happens directly in your browser, so your files are never uploaded to a server.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFiles = [];
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            renderFileList();
+            processButton.disabled = selectedFiles.length === 0;
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileElement = document.createElement('div');
+                fileElement.textContent = `${index + 1}. ${file.name}`;
+                fileList.appendChild(fileElement);
+            });
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Creating PDF... Please wait.';
+
+            try {
+                const pdfDoc = await PDFDocument.create();
+
+                for (const file of selectedFiles) {
+                    const fileBuffer = await file.arrayBuffer();
+                    let image;
+                    if (file.type === 'image/jpeg') {
+                        image = await pdfDoc.embedJpg(fileBuffer);
+                    } else if (file.type === 'image/png') {
+                        image = await pdfDoc.embedPng(fileBuffer);
+                    } else {
+                        continue; // Skip unsupported formats
+                    }
+
+                    const page = pdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'converted.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF created successfully!';
+            } catch (error) {
+                console.error('Error creating PDF:', error);
+                statusArea.textContent = 'An error occurred while creating the PDF.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Unlock your password-protected PDF files securely in your browser. No file uploads, your data stays on your device. Remove the password and download the unlocked PDF instantly." />
+    <title>Unlock PDF Free | Securely Remove PDF Password Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/unlock-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Unlock PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="password">Enter Password:</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button id="process-button" disabled>Unlock PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Unlock PDF Files Securely</h1>
+                    <p>Unlock your password-protected PDF files securely in your browser. No file uploads, your data stays on your device. Remove the password and download the unlocked PDF instantly.</p>
+                    <h2>How to Unlock a PDF</h2>
+                    <ol>
+                        <li>Upload your password-protected PDF.</li>
+                        <li>Enter the correct password for the file.</li>
+                        <li>Click 'Unlock PDF' to remove the password.</li>
+                        <li>Download your unlocked, password-free PDF.</li>
+                    </ol>
+                    <h2>Unlock PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>Do you store my password?</b><br>No. Your password is used only in your browser to decrypt the file and is never stored or transmitted.</p>
+                    <p><b>What if I don't know the password?</b><br>You must know the current password to remove it. This tool cannot recover lost passwords.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const passwordInput = document.getElementById('password');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+                statusArea.textContent = '';
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile || !passwordInput.value) {
+                statusArea.textContent = 'Please select a file and enter the password.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Unlocking PDF... Please wait.';
+
+            try {
+                const password = passwordInput.value;
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer, { password });
+
+                const pdfBytes = await pdfDoc.save();
+                const originalName = selectedFile.name.replace(/\.pdf$/i, '');
+                downloadFile(pdfBytes, `${originalName}-unlocked.pdf`, 'application/pdf');
+                statusArea.textContent = 'Unlock successful!';
+            } catch (error) {
+                console.error('Error unlocking PDF:', error);
+                statusArea.textContent = 'Failed to unlock. Please check the password and try again.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Rotate your PDF files for free with our secure, in-browser tool. Choose to rotate all pages or select specific pages to adjust their orientation instantly." />
+    <title>Rotate PDF Free | Securely Rotate PDF Pages Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/rotate-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Rotate PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="rotation-angle">Rotation Angle:</label>
+                        <select id="rotation-angle">
+                            <option value="90">90° (Right)</option>
+                            <option value="180">180° (Upside Down)</option>
+                            <option value="270">270° (Left)</option>
+                        </select>
+                        <label for="page-numbers">Pages (e.g., 1, 3-5):</label>
+                        <input type="text" id="page-numbers" placeholder="All pages">
+                    </div>
+                    <button id="process-button" disabled>Rotate PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Rotate PDF Pages Securely</h1>
+                    <p>Rotate your PDF files for free with our secure, in-browser tool. Choose to rotate all pages or select specific pages to adjust their orientation instantly.</p>
+                    <h2>How to Rotate a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Choose your preferred rotation angle.</li>
+                        <li>Enter the page numbers you want to rotate (e.g., "1, 3-5, 8"). Leave blank to rotate all pages.</li>
+                        <li>Click 'Process Files' to start.</li>
+                        <li>Download your newly rotated PDF.</li>
+                    </ol>
+                    <h2>Rotate PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>Can I rotate only specific pages?</b><br>Yes, you can specify which pages to rotate by entering the page numbers in the input field. If you leave it blank, all pages will be rotated.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument, degrees } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const rotationAngleSelect = document.getElementById('rotation-angle');
+        const pageNumbersInput = document.getElementById('page-numbers');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+                statusArea.textContent = '';
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Rotating PDF... Please wait.';
+
+            try {
+                const rotationAngle = parseInt(rotationAngleSelect.value, 10);
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer);
+                
+                const pageNumbers = parsePageNumbers(pageNumbersInput.value, pdfDoc.getPageCount());
+                const pages = pdfDoc.getPages();
+
+                pageNumbers.forEach(pageIndex => {
+                    if (pageIndex >= 0 && pageIndex < pages.length) {
+                        const page = pages[pageIndex];
+                        const currentRotation = page.getRotation().angle;
+                        page.setRotation(degrees(currentRotation + rotationAngle));
+                    }
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                const originalName = selectedFile.name.replace(/\.pdf$/i, '');
+                downloadFile(pdfBytes, `${originalName}-rotated.pdf`, 'application/pdf');
+                statusArea.textContent = 'Rotation successful!';
+            } catch (error) {
+                console.error('Error rotating PDF:', error);
+                statusArea.textContent = 'An error occurred while rotating the PDF.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function parsePageNumbers(input, maxPage) {
+            if (!input.trim()) {
+                return Array.from({ length: maxPage }, (_, i) => i);
+            }
+
+            const pageNumbers = new Set();
+            const parts = input.split(',');
+
+            parts.forEach(part => {
+                part = part.trim();
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    for (let i = start; i <= end; i++) {
+                        if (i > 0 && i <= maxPage) {
+                            pageNumbers.add(i - 1);
+                        }
+                    }
+                } else {
+                    const page = Number(part);
+                    if (page > 0 && page <= maxPage) {
+                        pageNumbers.add(page - 1);
+                    }
+                }
+            });
+
+            return Array.from(pageNumbers);
+        }
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

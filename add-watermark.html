@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Protect your documents by adding a custom text watermark. This tool applies your text to every page, ensuring your ownership is clear." />
+    <title>Add Watermark to PDF Free | Text Watermark</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/add-watermark.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Add Watermark</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="watermark-text">Watermark Text:</label>
+                        <input type="text" id="watermark-text" value="CONFIDENTIAL">
+                    </div>
+                    <button id="process-button" disabled>Add Watermark</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Add Watermark to PDF</h1>
+                    <p>Protect your documents by adding a text watermark. Enter your desired text, and it will be applied to every page of your PDF file securely in your browser.</p>
+                    <h2>How to Add a Watermark</h2>
+                    <ol>
+                        <li>Upload your PDF.</li>
+                        <li>In the options, type the text you want to use as a watermark.</li>
+                        <li>Click 'Process Files' to apply it.</li>
+                        <li>Your watermarked PDF will be ready for download.</li>
+                    </ol>
+                    <h2>Watermark FAQs</h2>
+                    <p><b>Can I change the watermark's position or color?</b><br>The tool currently applies a standard, diagonally centered watermark for maximum visibility. More options are coming soon!</p>
+                    <p><b>Are my files safe?</b><br>Yes, your files are processed in-browser and are not sent to any servers, keeping your information secure.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument, rgb, StandardFonts, degrees } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const watermarkTextInput = document.getElementById('watermark-text');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+                statusArea.textContent = '';
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile || !watermarkTextInput.value) {
+                statusArea.textContent = 'Please select a file and enter watermark text.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Adding watermark...';
+
+            try {
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer);
+                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                const pages = pdfDoc.getPages();
+                const watermarkText = watermarkTextInput.value;
+
+                for (const page of pages) {
+                    const { width, height } = page.getSize();
+                    const textSize = Math.min(width, height) / 10;
+                    const textWidth = font.widthOfTextAtSize(watermarkText, textSize);
+                    
+                    page.drawText(watermarkText, {
+                        x: width / 2 - textWidth / 2,
+                        y: height / 2 - textSize / 2,
+                        size: textSize,
+                        font,
+                        color: rgb(0.75, 0.75, 0.75),
+                        opacity: 0.5,
+                        rotate: degrees(45),
+                    });
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'watermarked.pdf', 'application/pdf');
+                statusArea.textContent = 'Watermark added successfully!';
+            } catch (error) {
+                console.error('Error adding watermark:', error);
+                statusArea.textContent = 'An error occurred.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Add a password to your PDF files with our free online tool. All processing is done in your browser, so your files are never uploaded to a server." />
+    <title>Protect PDF Free | Add a Password to Your PDF</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/protect-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Protect PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="password">Set Password:</label>
+                        <input type="password" id="password" required>
+                        <label for="encryption-level">Encryption Level:</label>
+                        <select id="encryption-level">
+                            <option value="aes-128" selected>128-bit AES (Recommended)</option>
+                            <option value="aes-256">256-bit AES (Strongest)</option>
+                        </select>
+                    </div>
+                    <button id="process-button" disabled>Protect PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Add a Password to Your PDF</h1>
+                    <p>Add a password to your PDF files with our free online tool. All processing is done in your browser, so your files are never uploaded to a server.</p>
+                    <h2>How to Protect a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Enter a strong password.</li>
+                        <li>Choose your preferred encryption level.</li>
+                        <li>Click 'Process Files' to start.</li>
+                        <li>Download your new password-protected PDF.</li>
+                    </ol>
+                    <h2>Protect PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>What happens if I forget my password?</b><br>We cannot recover your password, as the encryption is performed locally on your device. Make sure to store your password in a safe place.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const passwordInput = document.getElementById('password');
+        const encryptionLevelSelect = document.getElementById('encryption-level');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile || !passwordInput.value) {
+                statusArea.textContent = 'Please select a file and enter a password.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Encrypting your PDF...';
+
+            try {
+                const { PDFDocument, EncryptionAlgorithm } = PDFLib;
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+                const encryptionOptions = {
+                    userPassword: passwordInput.value,
+                    ownerPassword: passwordInput.value,
+                    algorithm: encryptionLevelSelect.value === 'aes-256' ? EncryptionAlgorithm.AES256 : EncryptionAlgorithm.AES128,
+                };
+
+                const pdfBytes = await pdfDoc.save({ useObjectStreams: false, ...encryptionOptions });
+
+                const originalName = selectedFile.name.replace(/\.pdf$/i, '');
+                downloadFile(pdfBytes, `${originalName}-protected.pdf`, 'application/pdf');
+                statusArea.textContent = 'Your file has been protected and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred during encryption: ' + error.message;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

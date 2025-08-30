@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Convert your Word documents (DOC, DOCX) to PDF with our free online tool. Choose page orientation (portrait or landscape) for a perfectly formatted, high-quality PDF every time." />
+    <title>Word to PDF Converter | Free & Secure Online Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/word-to-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Word to PDF</h2>
+                    <form id="upload-form" action="https://my-pdf-backend.onrender.com/word-to-pdf" method="POST" enctype="multipart/form-data">
+                        <div id="file-drop-zone"><p><b>Drag & Drop a Word file here</b><br>or click to select</p></div>
+                        <input type="file" id="file-input" name="file" accept=".doc,.docx" required hidden>
+                        <div id="file-list" style="margin-bottom: 20px;"></div>
+                        <div class="tool-options">
+                            <label for="orientation">Page Orientation:</label>
+                            <select id="orientation" name="orientation">
+                                <option value="portrait" selected>Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="process-button" disabled>Convert to PDF</button>
+                    </form>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Convert Word to PDF Securely</h1>
+                    <p>Turn your DOC and DOCX files into professional, universally readable PDF documents. Choose your preferred page orientation and get a high-quality PDF in seconds.</p>
+                    <h2>How to Convert Word to PDF</h2>
+                    <ol>
+                        <li>Upload your Word file (DOC or DOCX).</li>
+                        <li>Select your desired page orientation (Portrait or Landscape).</li>
+                        <li>Click 'Convert to PDF' to begin the conversion.</li>
+                        <li>Download your newly created PDF.</li>
+                    </ol>
+                    <h2>Word to PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, we use secure HTTPS connections. Your files are encrypted during transfer and automatically deleted from our servers after one hour.</p>
+                    <p><b>Will my formatting be preserved?</b><br>Our tool strives to maintain your original formatting, but complex layouts may have minor differences. The PDF will be a static, non-editable version of your document.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('upload-form');
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file) {
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+            } else {
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+            }
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            processButton.disabled = true;
+            statusArea.textContent = 'Converting your file... Please wait.';
+
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text || 'Network response was not ok') });
+                }
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'converted.pdf';
+                if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(contentDisposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                statusArea.textContent = 'Your file has been converted and downloaded.';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            })
+            .finally(() => {
+                processButton.disabled = false;
+            });
+        });
+    });
+    </script>
+</body>
+</html>

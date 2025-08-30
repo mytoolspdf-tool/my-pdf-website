@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sort, rotate, and delete pages in your PDF with our free online tool. Our visual editor makes it easy to rearrange your document exactly how you want it." />
+    <title>Organize PDF Free | Reorder, Rotate & Delete Pages Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/organize-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Libraries for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+    </script>
+    <style>
+        #page-preview-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+        }
+        .page-container {
+            position: relative;
+            border: 1px solid #ccc;
+            padding: 5px;
+            background: #f9f9f9;
+            text-align: center;
+        }
+        .page-container canvas { width: 100px; height: auto; }
+        .page-container .page-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        .page-container .page-actions button { font-size: 12px; padding: 2px 5px; cursor: pointer; }
+        .page-container .page-number { font-size: 12px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Organize PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="page-preview-area"></div>
+                    <button id="process-button" disabled>Apply Changes</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Organize PDF Pages</h1>
+                    <p>Sort, rotate, and delete pages in your PDF with our free online tool. Our visual editor makes it easy to rearrange your document exactly how you want it.</p>
+                    <h2>How to Organize a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Drag and drop the page thumbnails to reorder them.</li>
+                        <li>Use the buttons on each page to rotate or delete it.</li>
+                        <li>Click 'Process Files' to get your newly organized PDF.</li>
+                    </ol>
+                    <h2>Organize PDF FAQs</h2>
+                    <p><b>Can I add new pages?</b><br>This tool is for organizing existing pages. To add new pages, you can use our Merge PDF tool to combine it with another document.</p>
+                    <p><b>Is this process secure?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your information remains private.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument, degrees } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewArea = document.getElementById('page-preview-area');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFile = null;
+        let pageObjects = [];
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            selectedFile = file;
+            statusArea.textContent = 'Loading PDF preview...';
+            previewArea.innerHTML = '';
+            pageObjects = [];
+
+            const fileBuffer = await selectedFile.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
+
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.5 });
+                const container = document.createElement('div');
+                container.className = 'page-container';
+                container.dataset.originalIndex = i - 1;
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                const actions = document.createElement('div');
+                actions.className = 'page-actions';
+                const rotateBtn = document.createElement('button');
+                rotateBtn.textContent = '↷';
+                rotateBtn.onclick = () => rotatePage(container, 90);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '✖';
+                deleteBtn.onclick = () => deletePage(container);
+                actions.append(rotateBtn, deleteBtn);
+
+                const pageNum = document.createElement('div');
+                pageNum.className = 'page-number';
+                pageNum.textContent = `Page ${i}`;
+
+                container.append(canvas, actions, pageNum);
+                previewArea.appendChild(container);
+
+                pageObjects.push({ container, rotation: 0, deleted: false });
+            }
+            statusArea.textContent = 'PDF loaded. You can now organize the pages.';
+            processButton.disabled = false;
+        }
+
+        function rotatePage(container, angle) {
+            const pageObj = pageObjects.find(p => p.container === container);
+            pageObj.rotation = (pageObj.rotation + angle) % 360;
+            const canvas = container.querySelector('canvas');
+            canvas.style.transform = `rotate(${pageObj.rotation}deg)`;
+        }
+
+        function deletePage(container) {
+            const pageObj = pageObjects.find(p => p.container === container);
+            pageObj.deleted = !pageObj.deleted;
+            container.style.opacity = pageObj.deleted ? '0.5' : '1';
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Applying changes...';
+
+            try {
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer);
+                const newPdfDoc = await PDFDocument.create();
+
+                const orderedContainers = [...previewArea.children];
+                for (const container of orderedContainers) {
+                    const pageObj = pageObjects.find(p => p.container === container);
+                    if (pageObj.deleted) continue;
+
+                    const originalIndex = parseInt(container.dataset.originalIndex, 10);
+                    const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [originalIndex]);
+                    copiedPage.setRotation(degrees(pageObj.rotation));
+                    newPdfDoc.addPage(copiedPage);
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                downloadFile(pdfBytes, 'organized.pdf', 'application/pdf');
+                statusArea.textContent = 'Your organized PDF is ready!';
+            } catch (error) {
+                console.error('Error organizing PDF:', error);
+                statusArea.textContent = 'An error occurred. Please try again.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

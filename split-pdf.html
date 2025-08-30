@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Split your PDF into single pages, by fixed ranges, or extract specific pages. Our free tool works in your browser, ensuring your files remain private." />
+    <title>Split PDF Free | Securely Split Your PDF Online</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/split-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Split PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <div class="split-mode-selection">
+                            <input type="radio" id="mode-extract" name="split-mode" value="extract" checked>
+                            <label for="mode-extract">Extract Pages</label>
+                            <input type="radio" id="mode-single" name="split-mode" value="single">
+                            <label for="mode-single">Split into single pages</label>
+                            <input type="radio" id="mode-fixed" name="split-mode" value="fixed">
+                            <label for="mode-fixed">Split by fixed range</label>
+                        </div>
+                        <div id="extract-options">
+                            <label for="split-ranges">Pages to extract (e.g., 1, 3-5):</label>
+                            <input type="text" id="split-ranges" placeholder="e.g., 1, 3-5, 8">
+                        </div>
+                        <div id="fixed-range-options" style="display:none;">
+                            <label for="fixed-range-size">Pages per file:</label>
+                            <input type="number" id="fixed-range-size" value="1" min="1">
+                        </div>
+                    </div>
+                    <button id="process-button" disabled>Split PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1>Split PDF Files Securely</h1>
+                    <p>Split your PDF into single pages, by fixed ranges, or extract specific pages. Our free tool works in your browser, ensuring your files remain private.</p>
+                    <h2>How to Split a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Choose your preferred split mode (Extract, Single Pages, or Fixed Range).</li>
+                        <li>Enter the required page numbers or range size.</li>
+                        <li>Click 'Process Files' to start.</li>
+                        <li>Download your new PDF(s).</li>
+                    </ol>
+                    <h2>Split PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>Will I get multiple files?</b><br>If you choose to split into single pages or by a fixed range, you will receive a ZIP file containing all the new PDFs. If you extract pages, you will receive a single new PDF.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument } = window.PDFLib;
+        const JSZip = window.JSZip;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const splitRangesInput = document.getElementById('split-ranges');
+        const fixedRangeSizeInput = document.getElementById('fixed-range-size');
+        const extractOptions = document.getElementById('extract-options');
+        const fixedRangeOptions = document.getElementById('fixed-range-options');
+        document.querySelectorAll('input[name="split-mode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                extractOptions.style.display = e.target.value === 'extract' ? 'block' : 'none';
+                fixedRangeOptions.style.display = e.target.value === 'fixed' ? 'block' : 'none';
+            });
+        });
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+                statusArea.textContent = '';
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                statusArea.textContent = 'Please select a file.';
+                return;
+            }
+            const splitMode = document.querySelector('input[name="split-mode"]:checked').value;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Splitting PDF... Please wait.';
+
+            try {
+                const fileBuffer = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(fileBuffer);
+                const totalPages = pdfDoc.getPageCount();
+                const originalName = selectedFile.name.replace(/\.pdf$/i, '');
+
+                if (splitMode === 'extract') {
+                    if (!splitRangesInput.value) {
+                        throw new Error('Please enter the pages to extract.');
+                    }
+                    const newPdfDoc = await PDFDocument.create();
+                    const pageIndices = parsePageRanges(splitRangesInput.value, totalPages);
+                    if (pageIndices.length === 0) throw new Error('Invalid page range.');
+
+                    const copiedPages = await newPdfDoc.copyPages(pdfDoc, pageIndices);
+                    copiedPages.forEach(page => newPdfDoc.addPage(page));
+                    const pdfBytes = await newPdfDoc.save();
+                    downloadFile(pdfBytes, `${originalName}-split.pdf`, 'application/pdf');
+                } else {
+                    const zip = new JSZip();
+                    if (splitMode === 'single') {
+                        for (let i = 0; i < totalPages; i++) {
+                            const newPdfDoc = await PDFDocument.create();
+                            const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
+                            newPdfDoc.addPage(copiedPage);
+                            const pdfBytes = await newPdfDoc.save();
+                            zip.file(`${originalName}-page-${i + 1}.pdf`, pdfBytes);
+                        }
+                    } else if (splitMode === 'fixed') {
+                        const rangeSize = parseInt(fixedRangeSizeInput.value, 10);
+                        if (isNaN(rangeSize) || rangeSize < 1) throw new Error('Invalid range size.');
+                        for (let i = 0; i < totalPages; i += rangeSize) {
+                            const newPdfDoc = await PDFDocument.create();
+                            const endPage = Math.min(i + rangeSize, totalPages);
+                            const pageIndices = Array.from({ length: endPage - i }, (_, k) => i + k);
+                            const copiedPages = await newPdfDoc.copyPages(pdfDoc, pageIndices);
+                            copiedPages.forEach(page => newPdfDoc.addPage(page));
+                            const pdfBytes = await newPdfDoc.save();
+                            zip.file(`${originalName}-range-${i + 1}-${endPage}.pdf`, pdfBytes);
+                        }
+                    }
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    downloadFile(zipBlob, `${originalName}-split.zip`, 'application/zip');
+                }
+
+                statusArea.textContent = 'Split successful! Your download should start automatically.';
+            } catch (error) {
+                console.error('Error splitting PDF:', error);
+                statusArea.textContent = `An error occurred: ${error.message}`;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function parsePageRanges(rangeStr, maxPage) {
+            const indices = new Set();
+            const parts = rangeStr.split(',');
+            for (const part of parts) {
+                const trimmedPart = part.trim();
+                if (trimmedPart.includes('-')) {
+                    const [start, end] = trimmedPart.split('-').map(Number);
+                    if (!isNaN(start) && !isNaN(end)) {
+                        for (let i = start; i <= end; i++) {
+                            if (i > 0 && i <= maxPage) indices.add(i - 1);
+                        }
+                    }
+                } else {
+                    const page = Number(trimmedPart);
+                    if (!isNaN(page) && page > 0 && page <= maxPage) {
+                        indices.add(page - 1);
+                    }
+                }
+            }
+            return Array.from(indices).sort((a, b) => a - b);
+        }
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>
