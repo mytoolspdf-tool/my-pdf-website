@@ -18,6 +18,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -57,7 +60,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Split PDF Files Securely</h1>
+                    <h1 class="tool-page-title">Split PDF Files Securely</h1>
                     <p>Split your PDF into single pages, by fixed ranges, or extract specific pages. Our free tool works in your browser, ensuring your files remain private.</p>
                     <h2>How to Split a PDF</h2>
                     <ol>
@@ -71,6 +74,13 @@
                     <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
                     <p><b>Will I get multiple files?</b><br>If you choose to split into single pages or by a fixed range, you will receive a ZIP file containing all the new PDFs. If you extract pages, you will receive a single new PDF.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -87,6 +97,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const { PDFDocument } = window.PDFLib;

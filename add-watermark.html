@@ -12,11 +12,16 @@
 
     <!-- Client-Side Library for this tool only -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -42,7 +47,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Add Watermark to PDF</h1>
+                    <h1 class="tool-page-title">Add Watermark to PDF</h1>
                     <p>Protect your documents by adding a text watermark. Enter your desired text, and it will be applied to every page of your PDF file securely in your browser.</p>
                     <h2>How to Add a Watermark</h2>
                     <ol>
@@ -55,6 +60,13 @@
                     <p><b>Can I change the watermark's position or color?</b><br>The tool currently applies a standard, diagonally centered watermark for maximum visibility. More options are coming soon!</p>
                     <p><b>Are my files safe?</b><br>Yes, your files are processed in-browser and are not sent to any servers, keeping your information secure.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Annotate your PDF with free-hand drawings and text notes. Our free online tool works in your browser, keeping your files secure." />
+    <title>Annotate PDF | Free PDF Annotation Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/annotate-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container canvas { cursor: crosshair; }
+        #annotation-toolbar { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Annotate PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="annotation-toolbar" style="display: none;">
+                        <label>Tool: </label>
+                        <select id="tool-type">
+                            <option value="draw">Draw</option>
+                            <option value="text">Text</option>
+                        </select>
+                        <label>Color: </label>
+                        <input type="color" id="annotation-color" value="#ff0000">
+                    </div>
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="save-button" style="display: none;">Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Annotate PDF</h1>
+                    <p>Add drawings and text annotations to your PDF documents. Mark up, comment, and highlight with ease.</p>
+                    <h2>How to Annotate a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Select a tool (draw or text) and a color.</li>
+                        <li>Click or draw on the page to add your annotation.</li>
+                        <li>Click 'Save PDF' to download the updated file.</li>
+                    </ol>
+                    <h2>Annotate PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        const annotationToolbar = document.getElementById('annotation-toolbar');
+        const toolType = document.getElementById('tool-type');
+        const annotationColor = document.getElementById('annotation-color');
+        let pdfFile = null;
+        let annotations = {}; // { pageNum: [ { type, ... } ] }
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            annotations = {};
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Select a tool and start annotating.`;
+                saveButton.style.display = 'block';
+                annotationToolbar.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.dataset.pageNumber = i;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageContainer.appendChild(canvas);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupAnnotation(canvas, i);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupAnnotation(canvas, pageNum) {
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (toolType.value === 'draw') {
+                    isDrawing = true;
+                    [lastX, lastY] = [e.offsetX, e.offsetY];
+                } else if (toolType.value === 'text') {
+                    const text = prompt('Enter text:');
+                    if (text) {
+                        if (!annotations[pageNum]) annotations[pageNum] = [];
+                        annotations[pageNum].push({ type: 'text', text, x: e.offsetX, y: e.offsetY, color: annotationColor.value });
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = annotationColor.value;
+                        ctx.font = '16px Helvetica';
+                        ctx.fillText(text, e.offsetX, e.offsetY);
+                    }
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.strokeStyle = annotationColor.value;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                if (!annotations[pageNum]) annotations[pageNum] = [];
+                annotations[pageNum].push({ type: 'draw', x1: lastX, y1: lastY, x2: e.offsetX, y2: e.offsetY, color: annotationColor.value });
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+            });
+
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('mouseout', () => isDrawing = false);
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Saving PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument, rgb, StandardFonts } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+                const pages = pdfDoc.getPages();
+                for (const pageNum in annotations) {
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+                    const canvas = pageContainer.querySelector(`canvas[data-page-number='${pageNum}']`);
+                    const scale = height / canvas.height;
+
+                    for (const anno of annotations[pageNum]) {
+                        const color = anno.color;
+                        const r = parseInt(color.slice(1, 3), 16) / 255;
+                        const g = parseInt(color.slice(3, 5), 16) / 255;
+                        const b = parseInt(color.slice(5, 7), 16) / 255;
+
+                        if (anno.type === 'text') {
+                            page.drawText(anno.text, {
+                                x: anno.x * scale,
+                                y: height - anno.y * scale,
+                                font: font,
+                                size: 12,
+                                color: rgb(r, g, b),
+                            });
+                        } else if (anno.type === 'draw') {
+                            page.drawLine({
+                                start: { x: anno.x1 * scale, y: height - anno.y1 * scale },
+                                end: { x: anno.x2 * scale, y: height - anno.y2 * scale },
+                                thickness: 2,
+                                color: rgb(r, g, b),
+                            });
+                        }
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'annotated.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF saved and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Edit PDF metadata such as title, author, subject, and keywords. Our free online tool works in your browser, keeping your files secure." />
+    <title>Edit PDF Metadata | Free PDF Metadata Editor</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/edit-pdf-metadata.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Edit PDF Metadata</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="metadata-form" style="display: none; margin-top: 20px;">
+                        <input type="text" id="title" placeholder="Title"><br>
+                        <input type="text" id="author" placeholder="Author"><br>
+                        <input type="text" id="subject" placeholder="Subject"><br>
+                        <input type="text" id="keywords" placeholder="Keywords (comma-separated)"><br>
+                        <button id="save-button">Save Changes</button>
+                    </div>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Edit PDF Metadata</h1>
+                    <p>Quickly edit the metadata of your PDF files. Change the title, author, subject, and keywords directly in your browser. Your files remain private and secure.</p>
+                    <h2>How to Edit PDF Metadata</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Modify the metadata fields as needed.</li>
+                        <li>Click 'Save Changes' to download the updated PDF.</li>
+                    </ol>
+                    <h2>Edit PDF Metadata FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>What metadata can I edit?</b><br>You can edit the Title, Author, Subject, and Keywords of the PDF document.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const metadataForm = document.getElementById('metadata-form');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfBytes = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfBytes = await file.arrayBuffer();
+            const { PDFDocument } = PDFLib;
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+
+            document.getElementById('title').value = pdfDoc.getTitle() || '';
+            document.getElementById('author').value = pdfDoc.getAuthor() || '';
+            document.getElementById('subject').value = pdfDoc.getSubject() || '';
+            document.getElementById('keywords').value = pdfDoc.getKeywords() || '';
+            
+            metadataForm.style.display = 'block';
+            statusArea.textContent = `Loaded: ${file.name}`;
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfBytes) {
+                statusArea.textContent = 'Please load a PDF first.';
+                return;
+            }
+
+            saveButton.disabled = true;
+            statusArea.textContent = 'Saving changes...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+
+                pdfDoc.setTitle(document.getElementById('title').value);
+                pdfDoc.setAuthor(document.getElementById('author').value);
+                pdfDoc.setSubject(document.getElementById('subject').value);
+                pdfDoc.setKeywords(document.getElementById('keywords').value.split(',').map(k => k.trim()));
+
+                const modifiedPdfBytes = await pdfDoc.save();
+
+                downloadFile(modifiedPdfBytes, `edited-metadata.pdf`, 'application/pdf');
+                statusArea.textContent = 'Your PDF has been updated and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

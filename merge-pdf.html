@@ -12,11 +12,16 @@
 
     <!-- Client-Side Library for this tool only -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -38,11 +43,18 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Merge PDF Files</h1>
+                    <h1 class="tool-page-title">Merge PDF Files</h1>
                     <p>Easily combine multiple PDF documents into one single file. All processing happens securely in your browser, so your files remain private.</p>
                     <h2>How to Merge PDF Files</h2><ol><li>Select or drag and drop all the PDF files you want to combine.</li><li>Reorder the files if necessary by dragging them.</li><li>Click 'Process Files' to combine them.</li><li>Your merged PDF will download automatically.</li></ol>
                     <h2>Merge PDF FAQs</h2><p><b>Is there a limit on how many files I can merge?</b><br/>There's no strict limit, but performance depends on your browser and computer for very large numbers of files.</p><p><b>Are my files uploaded to a server?</b><br/>No. This tool processes your files directly in your web browser, ensuring maximum privacy.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

@@ -7,9 +7,34 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
 .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
 .header { background-color: var(--white); padding: 12px 0; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1000; }
-.header .container { display: flex; justify-content: space-between; align-items: center; }
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
 .logo { font-size: 24px; font-weight: 700; color: var(--primary-red); text-decoration: none; }
 .main-nav a { text-decoration: none; color: var(--dark-text); margin: 0 15px; font-weight: 500; }
+
+#searchInput {
+    border: 2px solid var(--primary-red);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    width: 250px;
+    transition: width 0.3s ease-in-out;
+}
+
+#searchInput:focus {
+    outline: none;
+    width: 300px;
+}
 
 .hero-section { background-color: var(--white); padding: 60px 0; text-align: center; }
 .hero-section h1 { font-size: 48px; font-weight: 700; margin-bottom: 1rem; }
@@ -23,8 +48,8 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
 .tool-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08); }
 .tool-icon { width: 48px; height: 48px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
 .tool-icon svg { width: 28px; height: 28px; fill: var(--white); }
-.tool-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; }
-.tool-card p { font-size: 14px; color: var(--light-text); line-height: 1.6; flex-grow: 1; }
+.tool-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; display: block; }
+    .tool-card p { font-size: 14px; color: var(--light-text); line-height: 1.6; flex-grow: 1; display: block; }
 
 .page-content { background-color: var(--white); padding: 40px; border-radius: 8px; margin-top: 40px; }
 .page-content h1 { font-size: 36px; margin-bottom: 1rem; }
@@ -55,6 +80,7 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
     border-radius: 8px;
 }
 .tool-content h1 { font-size: 32px; }
+.tool-content h1.tool-page-title { text-align: center; }
 .tool-content h2 { font-size: 22px; }
 
 .contact-form { max-width: 600px; margin: 2rem auto; }
@@ -70,6 +96,13 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
 #process-button:disabled { background-color: var(--light-text); cursor: not-allowed; }
 #status-area a { color: var(--primary-red); }
 
+#page-container canvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
 .drowning-border {
     border-radius: 10px;
     padding: 2rem;
@@ -81,6 +114,40 @@ body { font-family: 'Poppins', sans-serif; background-color: var(--background-li
 .footer { background-color: var(--white); border-top: 1px solid var(--border-color); padding: 2rem 0; text-align: center; margin-top: 40px; }
 .footer-nav a { color: var(--dark-text); text-decoration: none; margin: 0 15px; font-size: 14px; }
 .footer p { margin-top: 1rem; color: var(--light-text); font-size: 14px; }
+
+@media (max-width: 992px) {
+    .main-nav {
+        display: none; /* Hide nav on smaller screens for simplicity, can be replaced with a hamburger menu */
+    }
+    .header .container {
+        justify-content: space-between;
+    }
+    .search-container {
+        justify-content: flex-end;
+    }
+    #searchInput {
+        width: 200px;
+    }
+}
+
+.tool-category-header {
+    border: 2px solid #e53935;
+    border-radius: 0;
+    padding: 15px 20px;
+    margin: 30px 0 20px 0;
+    background-color: var(--white);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--dark-text);
+    text-align: left;
+}
+
+.free-message {
+    font-size: 20px;
+    color: #e53935;
+    margin: 20px 0;
+    text-align: center;
+}
 
 @media (max-width: 768px) {
     .hero-section h1 { font-size: 36px; }

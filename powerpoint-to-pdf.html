@@ -14,6 +14,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -44,7 +47,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Convert PowerPoint to PDF</h1>
+                    <h1 class="tool-page-title">Convert PowerPoint to PDF</h1>
                     <p>Convert your PowerPoint presentations into high-quality PDFs with our free online tool. Choose your page orientation and share your slides in a universal format.</p>
                     <h2>How to Convert PowerPoint to PDF</h2>
                     <ol>
@@ -57,6 +60,13 @@
                     <p><b>Will my animations and transitions be included?</b><br>No, PDF is a static format and does not support animations or transitions. The PDF will contain the final state of each slide.</p>
                     <p><b>Is my data safe?</b><br>Yes, your files are uploaded over a secure connection and are deleted from our servers immediately after processing.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -73,6 +83,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('upload-form');

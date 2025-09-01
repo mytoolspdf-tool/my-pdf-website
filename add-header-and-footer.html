@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Add a header and footer to each page of your PDF document. Customize the text and appearance. Our free online tool works in your browser." />
+    <title>Add Header and Footer to PDF | Free Online Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/add-header-and-footer.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Add Header & Footer to PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="options-form" style="display: none; margin-top: 20px;">
+                        <input type="text" id="header-text" placeholder="Header Text">
+                        <input type="text" id="footer-text" placeholder="Footer Text">
+                        <button id="process-button">Add Header/Footer</button>
+                    </div>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Add Header and Footer to PDF</h1>
+                    <p>Easily add a custom header and footer to every page of your PDF document. All processing is done securely in your browser.</p>
+                    <h2>How to Add a Header and Footer</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Enter the desired text for the header and/or footer.</li>
+                        <li>Click 'Add Header/Footer' to process the file.</li>
+                        <li>Download your updated PDF.</li>
+                    </ol>
+                    <h2>Header and Footer FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const optionsForm = document.getElementById('options-form');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                optionsForm.style.display = 'block';
+                statusArea.textContent = `Selected: ${file.name}`;
+            } else {
+                selectedFile = null;
+                optionsForm.style.display = 'none';
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                statusArea.textContent = 'Please select a PDF file.';
+                return;
+            }
+
+            const headerText = document.getElementById('header-text').value;
+            const footerText = document.getElementById('footer-text').value;
+
+            if (!headerText && !footerText) {
+                statusArea.textContent = 'Please enter text for the header or footer.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Adding header/footer...';
+
+            try {
+                const { PDFDocument, rgb, StandardFonts } = PDFLib;
+                const existingPdfBytes = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+                const pages = pdfDoc.getPages();
+                for (const page of pages) {
+                    const { width, height } = page.getSize();
+                    if (headerText) {
+                        page.drawText(headerText, {
+                            x: 50,
+                            y: height - 50,
+                            font: font,
+                            size: 12,
+                            color: rgb(0, 0, 0),
+                        });
+                    }
+                    if (footerText) {
+                        page.drawText(footerText, {
+                            x: 50,
+                            y: 50,
+                            font: font,
+                            size: 12,
+                            color: rgb(0, 0, 0),
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+
+                downloadFile(pdfBytes, `header-footer-${selectedFile.name}`, 'application/pdf');
+                statusArea.textContent = 'Header/footer added and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Mix and interleave the pages of two PDF documents. Our free online tool works in your browser." />
+    <title>Mix PDFs | Free PDF Page Interleaving Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/mix-pdfs.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Mix PDFs</h2>
+                    <div id="file-drop-zone-1" class="file-drop-zone"><p><b>Drag & Drop PDF 1 here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input-1" accept="application/pdf" hidden>
+                    <div id="file-drop-zone-2" class="file-drop-zone" style="margin-top:10px;"><p><b>Drag & Drop PDF 2 here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input-2" accept="application/pdf" hidden>
+                    
+                    <button id="save-button" style="display: none; margin-top: 10px;">Mix and Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Mix PDFs</h1>
+                    <p>Alternate the pages of two PDF documents to create a single, interleaved PDF.</p>
+                    <h2>How to Mix PDF Pages</h2>
+                    <ol>
+                        <li>Upload the first PDF file.</li>
+                        <li>Upload the second PDF file.</li>
+                        <li>Click 'Mix and Save PDF' to download the combined file.</li>
+                    </ol>
+                    <h2>Mix PDFs FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone1 = document.getElementById('file-drop-zone-1');
+        const fileInput1 = document.getElementById('file-input-1');
+        const fileDropZone2 = document.getElementById('file-drop-zone-2');
+        const fileInput2 = document.getElementById('file-input-2');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile1 = null;
+        let pdfFile2 = null;
+
+        function setupDropZone(dropZone, input, fileVarSetter) {
+            dropZone.addEventListener('click', () => input.click());
+            input.addEventListener('change', (e) => handleFile(e.target.files[0], fileVarSetter, dropZone));
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0], fileVarSetter, dropZone); });
+        }
+
+        setupDropZone(fileDropZone1, fileInput1, (file) => pdfFile1 = file);
+        setupDropZone(fileDropZone2, fileInput2, (file) => pdfFile2 = file);
+
+        function handleFile(file, fileVarSetter, dropZone) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            fileVarSetter(file);
+            dropZone.querySelector('p').textContent = `Loaded: ${file.name}`;
+            if (pdfFile1 && pdfFile2) {
+                saveButton.style.display = 'block';
+                statusArea.textContent = 'Ready to mix PDFs.';
+            }
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile1 || !pdfFile2) return;
+            statusArea.textContent = 'Mixing PDFs...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const pdf1Bytes = await pdfFile1.arrayBuffer();
+                const pdf2Bytes = await pdfFile2.arrayBuffer();
+                const pdfDoc1 = await PDFDocument.load(pdf1Bytes);
+                const pdfDoc2 = await PDFDocument.load(pdf2Bytes);
+
+                const newPdfDoc = await PDFDocument.create();
+                const numPages1 = pdfDoc1.getPageCount();
+                const numPages2 = pdfDoc2.getPageCount();
+                const maxPages = Math.max(numPages1, numPages2);
+
+                for (let i = 0; i < maxPages; i++) {
+                    if (i < numPages1) {
+                        const [page] = await newPdfDoc.copyPages(pdfDoc1, [i]);
+                        newPdfDoc.addPage(page);
+                    }
+                    if (i < numPages2) {
+                        const [page] = await newPdfDoc.copyPages(pdfDoc2, [i]);
+                        newPdfDoc.addPage(page);
+                    }
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                downloadFile(pdfBytes, 'mixed.pdf', 'application/pdf');
+                statusArea.textContent = 'PDFs mixed and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

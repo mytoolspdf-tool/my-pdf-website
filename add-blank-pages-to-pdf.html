@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Easily add blank pages to your PDF documents. Insert pages at the beginning, end, or a specific location. Free and secure tool." />
+    <title>Add Blank Pages to PDF | Free Online Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/add-blank-pages-to-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Add Blank Pages to PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    
+                    <div id="options" style="display: none; margin-top: 20px;">
+                        <label for="num-pages-input">Number of blank pages:</label>
+                        <input type="number" id="num-pages-input" value="1" min="1">
+                        <br><br>
+                        <label for="position-input">Insert after page number:</label>
+                        <input type="number" id="position-input" value="1" min="0">
+                        <small>(0 for at the beginning)</small>
+                    </div>
+
+                    <button id="save-button" style="display: none; margin-top: 10px;">Add Pages and Save</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Add Blank Pages to PDF</h1>
+                    <p>This tool allows you to insert one or more blank pages into your PDF file at any position.</p>
+                    <h2>How to Add Blank Pages</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Specify the number of blank pages to add.</li>
+                        <li>Enter the page number after which the blank pages should be inserted. Use 0 to add pages at the beginning.</li>
+                        <li>Click 'Add Pages and Save' to download the modified PDF.</li>
+                    </ol>
+                    <h2>Add Blank Pages FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const optionsDiv = document.getElementById('options');
+        const numPagesInput = document.getElementById('num-pages-input');
+        const positionInput = document.getElementById('position-input');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'PDF loaded. Configure options and save.';
+            optionsDiv.style.display = 'block';
+            saveButton.style.display = 'block';
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Adding blank pages...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                const numPages = parseInt(numPagesInput.value);
+                let position = parseInt(positionInput.value);
+                const pageCount = pdfDoc.getPageCount();
+
+                if (position > pageCount) {
+                    position = pageCount; // Add to the end if position is out of bounds
+                }
+
+                const pages = pdfDoc.getPages();
+                const pageSize = pages[0].getSize(); // Use the size of the first page for new pages
+
+                const newPdfDoc = await PDFDocument.create();
+                const pageIndices = Array.from({ length: pageCount }, (_, i) => i);
+                const copiedPages = await newPdfDoc.copyPages(pdfDoc, pageIndices);
+
+                let finalPageIndex = 0;
+                for (let i = 0; i < pageCount; i++) {
+                    if (i === position) {
+                        for (let j = 0; j < numPages; j++) {
+                            newPdfDoc.addPage(pageSize);
+                        }
+                    }
+                    newPdfDoc.addPage(copiedPages[i]);
+                }
+                if (position >= pageCount) { // Add to the end
+                     for (let j = 0; j < numPages; j++) {
+                        newPdfDoc.addPage(pageSize);
+                    }
+                }
+
+                // Rebuild the document to insert pages correctly
+                const finalDoc = await PDFDocument.create();
+                if (position === 0) {
+                    for (let j = 0; j < numPages; j++) {
+                        finalDoc.addPage(pageSize);
+                    }
+                }
+                for (let i = 0; i < pageCount; i++) {
+                    const [copiedPage] = await finalDoc.copyPages(pdfDoc, [i]);
+                    finalDoc.addPage(copiedPage);
+                    if (i + 1 === position) {
+                        for (let j = 0; j < numPages; j++) {
+                            finalDoc.addPage(pageSize);
+                        }
+                    }
+                }
+                 if (position > pageCount) { // Add to the end
+                     for (let j = 0; j < numPages; j++) {
+                        finalDoc.addPage(pageSize);
+                    }
+                }
+
+
+                const pdfBytes = await finalDoc.save();
+                downloadFile(pdfBytes, 'with-blank-pages.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF updated and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

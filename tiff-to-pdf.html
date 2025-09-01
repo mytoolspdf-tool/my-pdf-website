@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Convert TIFF images to a PDF document. Our free online tool makes it easy to create PDFs from your TIFF files, right in your browser." />
+    <title>TIFF to PDF | Convert TIFF to PDF Free</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/tiff-to-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>TIFF to PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop TIFF files here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".tif,.tiff" multiple hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <button id="process-button" disabled>Convert to PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Convert TIFF to PDF</h1>
+                    <p>Easily convert your TIFF images into a single PDF document. All processing is done in your browser, so your files are never uploaded to a server.</p>
+                    <h2>How to Convert TIFF to PDF</h2>
+                    <ol>
+                        <li>Upload one or more TIFF files.</li>
+                        <li>Click 'Convert to PDF' to start.</li>
+                        <li>Download your new PDF file.</li>
+                    </ol>
+                    <h2>TIFF to PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>Does it work with multi-page TIFFs?</b><br>This tool will convert each page of a multi-page TIFF into a separate page in the PDF.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/tiff.js/tiff.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFiles = [];
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => file.type === 'image/tiff');
+            if (selectedFiles.length > 0) {
+                fileList.innerHTML = `<div>Selected: ${selectedFiles.length} file(s)</div>`;
+                processButton.disabled = false;
+            } else {
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select valid TIFF files.';
+            }
+        }
+
+        async function convertTiffToPng(arrayBuffer) {
+            const tiff = new Tiff({ buffer: arrayBuffer });
+            const canvas = tiff.toCanvas();
+            return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) {
+                statusArea.textContent = 'Please select one or more TIFF files.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Creating your PDF...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.create();
+
+                for (const file of selectedFiles) {
+                    const tiffBytes = await file.arrayBuffer();
+                    const tiff = new Tiff({buffer: tiffBytes});
+                    for (let i = 0, len = tiff.countDirectory(); i < len; ++i) {
+                        tiff.setDirectory(i);
+                        const canvas = tiff.toCanvas();
+                        const pngBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                        const pngBytes = await pngBlob.arrayBuffer();
+                        const pngImage = await pdfDoc.embedPng(pngBytes);
+                        const page = pdfDoc.addPage([pngImage.width, pngImage.height]);
+                        page.drawImage(pngImage, {
+                            x: 0,
+                            y: 0,
+                            width: pngImage.width,
+                            height: pngImage.height,
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+
+                downloadFile(pdfBytes, `converted-images.pdf`, 'application/pdf');
+                statusArea.textContent = 'Your PDF has been created and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred during PDF creation: ' + error.message;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -14,6 +14,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -42,7 +45,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Convert PDF to Word</h1>
+                    <h1 class="tool-page-title">Convert PDF to Word</h1>
                     <p>Convert your PDF files into editable Word documents with our free online tool. Choose to keep the original formatting or reflow the text for easy editing.</p>
                     <h2>How to Convert PDF to Word</h2>
                     <ol>
@@ -55,6 +58,13 @@
                     <p><b>Will my formatting be preserved?</b><br>You can choose to keep the source formatting, which preserves the original layout, or reflow the text for easier editing. Complex PDFs may require some adjustments.</p>
                     <p><b>Is my data safe?</b><br>Yes, your files are uploaded over a secure connection and are deleted from our servers immediately after processing.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -71,6 +81,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const API_BASE_URL = 'https://my-pdf-backend.onrender.com';

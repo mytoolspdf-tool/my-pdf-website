@@ -7,6 +7,9 @@
     <title>Excel to PDF Free | Convert Spreadsheets Online</title>
 
     <link rel="canonical" href="https://mytoolspdf.com/excel-to-pdf.html" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.png" type="image/png">
 </head>
@@ -14,6 +17,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -44,7 +50,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Convert Excel to PDF</h1>
+                    <h1 class="tool-page-title">Convert Excel to PDF</h1>
                     <p>Convert your Excel spreadsheets to high-quality PDF files for free. Our online tool makes it easy to share and archive your data securely.</p>
                     <h2>How to Convert Excel to PDF</h2>
                     <ol>
@@ -57,6 +63,13 @@
                     <p><b>Why does my formatting look different?</b><br>The converter does its best to preserve formatting, but complex spreadsheets may have minor differences. We recommend reviewing the PDF after conversion.</p>
                     <p><b>Are my files secure?</b><br>Yes, your files are uploaded over a secure connection and are deleted from our servers immediately after processing.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

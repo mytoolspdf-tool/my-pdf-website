@@ -12,7 +12,9 @@
 
     <!-- Client-Side Libraries for this tool only -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
     </script>
@@ -49,6 +51,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -70,7 +75,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Organize PDF Pages</h1>
+                    <h1 class="tool-page-title">Organize PDF Pages</h1>
                     <p>Sort, rotate, and delete pages in your PDF with our free online tool. Our visual editor makes it easy to rearrange your document exactly how you want it.</p>
                     <h2>How to Organize a PDF</h2>
                     <ol>
@@ -83,6 +88,13 @@
                     <p><b>Can I add new pages?</b><br>This tool is for organizing existing pages. To add new pages, you can use our Merge PDF tool to combine it with another document.</p>
                     <p><b>Is this process secure?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your information remains private.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

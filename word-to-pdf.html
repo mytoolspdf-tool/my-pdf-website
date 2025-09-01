@@ -20,6 +20,9 @@
                 <a href="about.html">About Us</a>
                 <a href="contact.html">Contact</a>
             </nav>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
         </div>
     </header>
 
@@ -44,7 +47,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Convert Word to PDF Securely</h1>
+                    <h1 class="tool-page-title">Convert Word to PDF Securely</h1>
                     <p>Turn your DOC and DOCX files into professional, universally readable PDF documents. Choose your preferred page orientation and get a high-quality PDF in seconds.</p>
                     <h2>How to Convert Word to PDF</h2>
                     <ol>
@@ -57,6 +60,13 @@
                     <p><b>Is my data safe?</b><br>Yes, we use secure HTTPS connections. Your files are encrypted during transfer and automatically deleted from our servers after one hour.</p>
                     <p><b>Will my formatting be preserved?</b><br>Our tool strives to maintain your original formatting, but complex layouts may have minor differences. The PDF will be a static, non-editable version of your document.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -73,6 +83,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('upload-form');

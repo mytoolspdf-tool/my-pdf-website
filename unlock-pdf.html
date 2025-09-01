@@ -21,6 +21,9 @@
                 <a href="about.html">About Us</a>
                 <a href="contact.html">Contact</a>
             </nav>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
         </div>
     </header>
 
@@ -40,7 +43,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Unlock PDF Files Securely</h1>
+                    <h1 class="tool-page-title">Unlock PDF Files Securely</h1>
                     <p>Unlock your password-protected PDF files securely in your browser. No file uploads, your data stays on your device. Remove the password and download the unlocked PDF instantly.</p>
                     <h2>How to Unlock a PDF</h2>
                     <ol>
@@ -54,6 +57,13 @@
                     <p><b>Do you store my password?</b><br>No. Your password is used only in your browser to decrypt the file and is never stored or transmitted.</p>
                     <p><b>What if I don't know the password?</b><br>You must know the current password to remove it. This tool cannot recover lost passwords.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -70,6 +80,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const { PDFDocument } = window.PDFLib;

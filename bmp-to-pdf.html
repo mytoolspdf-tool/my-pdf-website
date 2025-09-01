@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Convert BMP images to PDF for free. This tool works in your browser, keeping your files secure." />
+    <title>BMP to PDF | Free Online Converter</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/bmp-to-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>BMP to PDF Converter</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop BMP files here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept=".bmp" multiple hidden>
+                    
+                    <button id="save-button" style="display: none; margin-top: 10px;">Convert to PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">BMP to PDF</h1>
+                    <p>Convert your BMP (Bitmap) image files into a single PDF document. You can upload multiple BMP files to combine them.</p>
+                    <h2>How to Convert BMP to PDF</h2>
+                    <ol>
+                        <li>Upload one or more BMP files.</li>
+                        <li>Click 'Convert to PDF' to create and download your PDF.</li>
+                    </ol>
+                    <h2>BMP to PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script src="https://unpkg.com/bmp-js@0.1.0/lib/bmp.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let bmpFiles = [];
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+        function handleFiles(files) {
+            bmpFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.bmp'));
+            if (bmpFiles.length === 0) {
+                statusArea.textContent = 'Please select valid BMP files.';
+                return;
+            }
+            statusArea.textContent = `${bmpFiles.length} BMP file(s) loaded.`;
+            saveButton.style.display = 'block';
+        }
+
+        async function bmpToPngDataUrl(bmpBuffer) {
+            const bmpData = bmp.decode(bmpBuffer);
+            const canvas = document.createElement('canvas');
+            canvas.width = bmpData.width;
+            canvas.height = bmpData.height;
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(bmpData.width, bmpData.height);
+            imageData.data.set(bmpData.data);
+            ctx.putImageData(imageData, 0, 0);
+            return canvas.toDataURL('image/png');
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (bmpFiles.length === 0) return;
+            statusArea.textContent = 'Converting to PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.create();
+
+                for (let i = 0; i < bmpFiles.length; i++) {
+                    statusArea.textContent = `Processing image ${i + 1} of ${bmpFiles.length}`;
+                    const bmpBuffer = await bmpFiles[i].arrayBuffer();
+                    const pngDataUrl = await bmpToPngDataUrl(new Uint8Array(bmpBuffer));
+                    
+                    const pngImage = await pdfDoc.embedPng(pngDataUrl);
+                    const page = pdfDoc.addPage([pngImage.width, pngImage.height]);
+                    page.drawImage(pngImage, { x: 0, y: 0, width: pngImage.width, height: pngImage.height });
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'converted.pdf', 'application/pdf');
+                statusArea.textContent = 'Conversion complete.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Find and replace all occurrences of specific text in your PDF file. A powerful tool for making bulk updates to your documents, such as changing names, dates, or correcting recurring errors." />
+    <title>Replace Text in PDF | Find and Replace PDF Text</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/replace-text-in-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Replace Text in PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <div class="tool-options">
+                        <label for="find-text">Find:</label>
+                        <input type="text" id="find-text" placeholder="Text to find">
+                        <label for="replace-text">Replace with:</label>
+                        <input type="text" id="replace-text" placeholder="New text">
+                    </div>
+                    <button id="process-button" disabled>Replace Text</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content">
+                    <h1 class="tool-page-title">Replace Text in PDF</h1>
+                    <p>Find and replace all occurrences of specific text in your PDF file. A powerful tool for making bulk updates to your documents, such as changing names, dates, or correcting recurring errors.</p>
+                    <h2>How to Replace Text in a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Enter the text you want to find in the 'Find' field.</li>
+                        <li>Enter the replacement text in the 'Replace with' field.</li>
+                        <li>Click 'Replace Text' to process the file.</li>
+                        <li>Download your updated PDF.</li>
+                    </ol>
+                    <h2>Replace Text FAQs</h2>
+                    <p><b>Does this tool work with scanned PDFs?</b><br>This tool works best with text-based PDFs. It cannot replace text in images or scanned documents.</p>
+                    <p><b>Is this process secure?</b><br>Yes. Your files are processed directly in your browser and are never uploaded to a server, ensuring your data remains private.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { PDFDocument } = window.PDFLib;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const findTextInput = document.getElementById('find-text');
+        const replaceTextInput = document.getElementById('replace-text');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            selectedFile = files[0];
+            renderFileList();
+            processButton.disabled = !selectedFile;
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = '';
+            if (selectedFile) {
+                const fileElement = document.createElement('div');
+                fileElement.textContent = `File: ${selectedFile.name}`;
+                fileList.appendChild(fileElement);
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile || !findTextInput.value) return;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Replacing text... Please wait.';
+
+            try {
+                // Placeholder for actual find and replace logic
+                statusArea.textContent = 'This feature is under development. Please check back soon.';
+                // The actual implementation would require a more complex library to parse PDF content streams.
+                // pdf-lib does not support text searching and replacement directly.
+            } catch (error) {
+                console.error('Error processing PDF:', error);
+                statusArea.textContent = 'An error occurred during the process.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -12,11 +12,16 @@
 
     <!-- Client-Side Library for this tool only -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -47,7 +52,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-page-container container">
-                    <h1>Add Page Numbers to PDF</h1>
+                    <h1 class="tool-page-title">Add Page Numbers to PDF</h1>
                     <p>Easily insert page numbers into your PDF document. Choose the position, and our tool will automatically add numbers to every page for you.</p>
                     <h2>How to Add Page Numbers</h2>
                     <ol>
@@ -58,6 +63,13 @@
                     </ol>
                     <h2>Page Numbering FAQs</h2><p><b>Can I customize the font or size?</b><br>Currently, we offer a standard format for simplicity, but we plan to add more customization options in the future.</p><p><b>Is the process secure?</b><br>Yes, page numbers are added directly in your browser, ensuring your document's privacy.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

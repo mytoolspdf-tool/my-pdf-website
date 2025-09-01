@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Flatten a PDF to make annotations and form fields uneditable. Our free online tool works in your browser, keeping your files secure." />
+    <title>Flatten PDF | Free PDF Flattener</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/flatten-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Flatten PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <button id="process-button" disabled>Flatten PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Flatten PDF</h1>
+                    <p>Make your PDF's annotations and form fields permanent and uneditable by flattening the document. All processing is done securely in your browser.</p>
+                    <h2>How to Flatten a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Click 'Flatten PDF' to start the process.</li>
+                        <li>Download your new, flattened PDF file.</li>
+                    </ol>
+                    <h2>Flatten PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                    <p><b>What does 'flattening' do?</b><br>Flattening a PDF merges interactive elements like annotations and form fields into the main content of the page, making them non-interactive.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileList.innerHTML = `<div>Selected: ${file.name}</div>`;
+                processButton.disabled = false;
+            } else {
+                selectedFile = null;
+                fileList.innerHTML = '';
+                processButton.disabled = true;
+                statusArea.textContent = 'Please select a valid PDF file.';
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                statusArea.textContent = 'Please select a PDF file.';
+                return;
+            }
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Flattening your PDF...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await selectedFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                const form = pdfDoc.getForm();
+                form.flatten();
+
+                const pdfBytes = await pdfDoc.save();
+
+                downloadFile(pdfBytes, `flattened-${selectedFile.name}`, 'application/pdf');
+                statusArea.textContent = 'Your PDF has been flattened and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred during flattening: ' + error.message;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Automatically detect and remove blank pages from your PDF. Clean up your documents easily. Free, secure, and client-side processing." />
+    <title>Auto-Detect and Remove Blank Pages from PDF | Free Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/auto-detect-and-remove-blank-pages.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Auto-Detect and Remove Blank Pages</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    
+                    <button id="process-button" style="display: none; margin-top: 10px;">Detect and Remove Blank Pages</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Auto-Detect and Remove Blank Pages from PDF</h1>
+                    <p>This tool scans your PDF for blank pages and removes them automatically, creating a cleaner, more compact document.</p>
+                    <h2>How to Remove Blank Pages</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Click 'Detect and Remove Blank Pages'.</li>
+                        <li>The tool will process the file and automatically download a new PDF with the blank pages removed.</li>
+                    </ol>
+                    <h2>Remove Blank Pages FAQs</h2>
+                    <p><b>How does it detect blank pages?</b><br>The tool renders each page and analyzes it to see if it's empty. A small tolerance is used to account for minor scanning artifacts.</p>
+                    <p><b>Is my data safe?</b><br>Yes, all processing happens in your browser. Your files are not uploaded to any server, ensuring complete privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'PDF loaded. Ready to process.';
+            processButton.style.display = 'block';
+        }
+
+        async function isPageBlank(pdf, pageNum) {
+            const page = await pdf.getPage(pageNum);
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const viewport = page.getViewport({ scale: 1 });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] < 250 || data[i+1] < 250 || data[i+2] < 250) { // Not purely white
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Analyzing pages...';
+            processButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfjsDoc = await pdfjsLib.getDocument({data: existingPdfBytes}).promise;
+                
+                const nonBlankPageIndices = [];
+                for (let i = 1; i <= pdfjsDoc.numPages; i++) {
+                    statusArea.textContent = `Analyzing page ${i} of ${pdfjsDoc.numPages}`;
+                    if (!await isPageBlank(pdfjsDoc, i)) {
+                        nonBlankPageIndices.push(i - 1);
+                    }
+                }
+
+                if (nonBlankPageIndices.length === pdfjsDoc.numPages) {
+                    statusArea.textContent = 'No blank pages found.';
+                    return;
+                }
+
+                statusArea.textContent = 'Creating new PDF...';
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const newPdfDoc = await PDFDocument.create();
+
+                const copiedPages = await newPdfDoc.copyPages(pdfDoc, nonBlankPageIndices);
+                copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+                const pdfBytes = await newPdfDoc.save();
+                downloadFile(pdfBytes, 'non-blank.pdf', 'application/pdf');
+                statusArea.textContent = `Removed ${pdfjsDoc.numPages - nonBlankPageIndices.length} blank pages.`;
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

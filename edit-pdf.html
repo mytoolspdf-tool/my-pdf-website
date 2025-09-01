@@ -11,12 +11,17 @@
     <link rel="icon" href="favicon.png" type="image/png">
 
     <!-- Client-Side Library for this tool only -->
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -46,7 +51,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content">
-                    <h1>Add Text to PDF</h1>
+                    <h1 class="tool-page-title">Add Text to PDF</h1>
                     <p>Need to fill out a form or add an annotation? This tool lets you add new text to any page of your PDF file, directly in your browser.</p>
                     <h2>How to Add Text to a PDF</h2>
                     <ol>
@@ -59,6 +64,13 @@
                     <p><b>Can I move the text around?</b><br>Currently, you must specify the location programmatically. A visual editor is planned for a future update.</p>
                     <p><b>Is this secure?</b><br>Yes, all edits happen in your browser, ensuring the confidentiality of your document.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

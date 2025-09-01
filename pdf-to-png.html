@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Convert each page of your PDF into a high-quality PNG image. This tool is perfect for when you need images with transparent backgrounds or lossless quality for use in presentations or web design." />
+    <title>PDF to PNG | Convert PDF to PNG Free</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/pdf-to-png.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <!-- Client-Side Library for this tool only -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>PDF to PNG</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="file-list" style="margin-bottom: 20px;"></div>
+                    <button id="process-button" disabled>Convert to PNG</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content">
+                    <h1 class="tool-page-title">PDF to PNG Converter</h1>
+                    <p>Convert each page of your PDF into a high-quality PNG image. This tool is perfect for when you need images with transparent backgrounds or lossless quality for use in presentations or web design.</p>
+                    <h2>How to Convert PDF to PNG</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>The tool will process the PDF and convert each page into a PNG image.</li>
+                        <li>Click 'Convert to PNG' to begin the conversion.</li>
+                        <li>Download the PNG images, which will be provided in a ZIP file.</li>
+                    </ol>
+                    <h2>PDF to PNG FAQs</h2>
+                    <p><b>Will the PNGs have transparent backgrounds?</b><br>If the original PDF pages have transparent layers, the resulting PNGs will maintain that transparency.</p>
+                    <p><b>Is this process secure?</b><br>Yes. All file processing happens directly in your browser, so your PDF is never uploaded to a server.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        let selectedFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            selectedFile = files[0];
+            renderFileList();
+            processButton.disabled = !selectedFile;
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = '';
+            if (selectedFile) {
+                const fileElement = document.createElement('div');
+                fileElement.textContent = `File: ${selectedFile.name}`;
+                fileList.appendChild(fileElement);
+            }
+        }
+
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            processButton.disabled = true;
+            statusArea.textContent = 'Converting PDF to PNG... Please wait.';
+
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async (event) => {
+                    const typedarray = new Uint8Array(event.target.result);
+                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                    const zip = new JSZip();
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.0 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        zip.file(`page-${i}.png`, blob);
+                    }
+
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    downloadFile(zipBlob, 'png-images.zip', 'application/zip');
+                    statusArea.textContent = 'Conversion successful! Check your downloads.';
+                };
+                fileReader.readAsArrayBuffer(selectedFile);
+            } catch (error) {
+                console.error('Error converting PDF:', error);
+                statusArea.textContent = 'An error occurred during conversion.';
+            } finally {
+                processButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Create a fillable PDF by adding form fields like text boxes, checkboxes, and more. Our free online tool works in your browser." />
+    <title>Create Fillable PDF | Free PDF Form Creator</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/create-fillable-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container canvas { cursor: pointer; }
+        .form-field-preview { position: absolute; border: 1px dashed #007bff; background-color: rgba(0, 123, 255, 0.1); box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Create Fillable PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    
+                    <div id="form-field-options" style="display: none; margin-top: 20px;">
+                        <label for="field-type">Field Type:</label>
+                        <select id="field-type">
+                            <option value="textfield">Text Field</option>
+                            <option value="checkbox">Checkbox</option>
+                        </select>
+                    </div>
+
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="save-button" style="display: none;">Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Create a Fillable PDF</h1>
+                    <p>Make your PDF interactive by adding form fields. You can add text fields, checkboxes, and more to create a fillable document.</p>
+                    <h2>How to Create a Fillable PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Select the type of form field you want to add.</li>
+                        <li>Click on the page to place the form field.</li>
+                        <li>Click 'Save PDF' to download your new fillable PDF.</li>
+                    </ol>
+                    <h2>Create Fillable PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const formFieldOptions = document.getElementById('form-field-options');
+        const fieldTypeSelect = document.getElementById('field-type');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+        let formFields = {}; // { pageNum: [ { type, x, y, width, height } ] }
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            formFields = {};
+            formFieldOptions.style.display = 'block';
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Select a field type and click on a page to add it.`;
+                saveButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const pageDiv = document.createElement('div');
+                    pageDiv.style.position = 'relative';
+                    pageDiv.style.width = viewport.width + 'px';
+                    pageDiv.style.height = viewport.height + 'px';
+                    pageDiv.style.margin = '10px auto';
+
+                    const canvas = document.createElement('canvas');
+                    canvas.dataset.pageNumber = i;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageDiv.appendChild(canvas);
+                    pageContainer.appendChild(pageDiv);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupFieldPlacement(pageDiv, i);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupFieldPlacement(pageDiv, pageNum) {
+            pageDiv.addEventListener('click', (e) => {
+                const rect = pageDiv.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const type = fieldTypeSelect.value;
+                
+                let fieldWidth, fieldHeight;
+                if (type === 'textfield') {
+                    fieldWidth = 150; fieldHeight = 20;
+                } else if (type === 'checkbox') {
+                    fieldWidth = 20; fieldHeight = 20;
+                }
+
+                if (!formFields[pageNum]) formFields[pageNum] = [];
+                formFields[pageNum].push({ type, x, y, width: fieldWidth, height: fieldHeight });
+
+                const fieldPreview = document.createElement('div');
+                fieldPreview.className = 'form-field-preview';
+                fieldPreview.style.left = `${x}px`;
+                fieldPreview.style.top = `${y}px`;
+                fieldPreview.style.width = `${fieldWidth}px`;
+                fieldPreview.style.height = `${fieldHeight}px`;
+                pageDiv.appendChild(fieldPreview);
+            });
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Saving PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const form = pdfDoc.getForm();
+
+                const pages = pdfDoc.getPages();
+                for (const pageNum in formFields) {
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+                    const canvas = pageContainer.querySelector(`canvas[data-page-number='${pageNum}']`);
+                    const scale = height / canvas.height;
+
+                    for (const field of formFields[pageNum]) {
+                        const fieldX = field.x * scale;
+                        const fieldY = height - (field.y * scale) - (field.height * scale);
+                        const fieldWidth = field.width * scale;
+                        const fieldHeight = field.height * scale;
+
+                        if (field.type === 'textfield') {
+                            const textField = form.createTextField(`textfield.${pageNum}.${Date.now()}`)
+                            textField.addToPage(page, { x: fieldX, y: fieldY, width: fieldWidth, height: fieldHeight })
+                        } else if (field.type === 'checkbox') {
+                            const checkBox = form.createCheckBox(`checkbox.${pageNum}.${Date.now()}`)
+                            checkBox.addToPage(page, { x: fieldX, y: fieldY, width: fieldWidth, height: fieldHeight })
+                        }
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'fillable.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF saved and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

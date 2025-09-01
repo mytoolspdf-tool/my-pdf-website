@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Create a printable booklet from your PDF. This tool reorders pages for easy booklet printing. Free and works in your browser." />
+    <title>Create PDF Booklet | Free Online Booklet Maker</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/create-pdf-booklet.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Create PDF Booklet</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    
+                    <button id="save-button" style="display: none; margin-top: 10px;">Create and Save Booklet</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Create PDF Booklet</h1>
+                    <p>This tool rearranges the pages of your PDF to create a booklet, ready for printing and binding.</p>
+                    <h2>How to Create a PDF Booklet</h2>
+                    <ol>
+                        <li>Upload your PDF file. The number of pages will be padded to a multiple of 4 if needed.</li>
+                        <li>Click 'Create and Save Booklet' to download the reordered PDF.</li>
+                        <li>When printing, choose two-sided printing, flipping on the short edge.</li>
+                    </ol>
+                    <h2>Create PDF Booklet FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'PDF loaded. Ready to create booklet.';
+            saveButton.style.display = 'block';
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Creating booklet...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                let pageCount = pdfDoc.getPageCount();
+                const pages = pdfDoc.getPages();
+                
+                // Pad with blank pages to make page count a multiple of 4
+                while (pageCount % 4 !== 0) {
+                    pdfDoc.addPage();
+                    pageCount++;
+                }
+
+                const newPdfDoc = await PDFDocument.create();
+                const bookletOrder = [];
+                for (let i = 0; i < pageCount / 2; i += 2) {
+                    bookletOrder.push(pageCount - 1 - i);
+                    bookletOrder.push(i);
+                    bookletOrder.push(i + 1);
+                    bookletOrder.push(pageCount - 2 - i);
+                }
+
+                const copiedPages = await newPdfDoc.copyPages(pdfDoc, bookletOrder);
+                copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+                const pdfBytes = await newPdfDoc.save();
+                downloadFile(pdfBytes, 'booklet.pdf', 'application/pdf');
+                statusArea.textContent = 'Booklet created and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

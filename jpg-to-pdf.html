@@ -12,11 +12,16 @@
 
     <!-- Client-Side Library for this tool only -->
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -51,7 +56,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content">
-                    <h1>JPG to PDF Free</h1>
+                    <h1 class="tool-page-title">JPG to PDF Free</h1>
                     <p>Convert your JPG and PNG images into a professional PDF document. Combine multiple images, adjust orientation and margins, and download your file for free.</p>
                     <h2>How to Convert JPG to PDF</h2>
                     <ol>
@@ -65,6 +70,13 @@
                     <p><b>Can I combine multiple images?</b><br>Yes, you can upload multiple images to combine them into a single PDF.</p>
                     <p><b>Is this process secure?</b><br>Absolutely. All image processing happens directly in your browser, so your files are never uploaded to a server.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

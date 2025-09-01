@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Extract specific pages from your PDF document by selecting the ones you want to keep. Our free online tool works in your browser." />
+    <title>Extract Pages from PDF | Free PDF Page Extractor</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/extract-pages-from-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .page-thumbnail { position: relative; cursor: pointer; border: 2px solid transparent; }
+        .page-thumbnail.selected { border-color: #007bff; }
+        .page-thumbnail canvas { display: block; }
+        .page-number { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Extract Pages from PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="page-container"></div>
+                    <button id="save-button" style="display: none; margin-top: 10px;">Extract Pages and Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Extract Pages from PDF</h1>
+                    <p>Easily extract pages from your PDF document. Just click on the pages you want to keep and then save the new PDF.</p>
+                    <h2>How to Extract Pages from a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Click on the thumbnails of the pages you want to extract.</li>
+                        <li>Click 'Extract Pages and Save PDF' to download the new file with only the selected pages.</li>
+                    </ol>
+                    <h2>Extract Pages from PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+        let pagesToExtract = new Set();
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            pagesToExtract.clear();
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Click on pages to select them for extraction.`;
+                saveButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 0.3 });
+                    const thumbnailDiv = document.createElement('div');
+                    thumbnailDiv.className = 'page-thumbnail';
+                    thumbnailDiv.dataset.pageNumber = i;
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    const pageNumberSpan = document.createElement('span');
+                    pageNumberSpan.className = 'page-number';
+                    pageNumberSpan.textContent = i;
+
+                    thumbnailDiv.appendChild(canvas);
+                    thumbnailDiv.appendChild(pageNumberSpan);
+                    pageContainer.appendChild(thumbnailDiv);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                    thumbnailDiv.addEventListener('click', () => {
+                        thumbnailDiv.classList.toggle('selected');
+                        if (pagesToExtract.has(i)) {
+                            pagesToExtract.delete(i);
+                        } else {
+                            pagesToExtract.add(i);
+                        }
+                    });
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile || pagesToExtract.size === 0) {
+                statusArea.textContent = 'Please select at least one page to extract.';
+                return;
+            }
+            statusArea.textContent = 'Extracting pages...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                const newPdfDoc = await PDFDocument.create();
+                const pageIndices = Array.from(pagesToExtract).sort((a, b) => a - b).map(p => p - 1);
+                const copiedPages = await newPdfDoc.copyPages(pdfDoc, pageIndices);
+                copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+                const pdfBytes = await newPdfDoc.save();
+                downloadFile(pdfBytes, 'extracted-pages.pdf', 'application/pdf');
+                statusArea.textContent = 'Pages extracted and PDF downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

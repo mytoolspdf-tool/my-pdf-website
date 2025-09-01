@@ -17,6 +17,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -48,7 +51,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Rotate PDF Pages Securely</h1>
+                    <h1 class="tool-page-title">Rotate PDF Pages Securely</h1>
                     <p>Rotate your PDF files for free with our secure, in-browser tool. Choose to rotate all pages or select specific pages to adjust their orientation instantly.</p>
                     <h2>How to Rotate a PDF</h2>
                     <ol>
@@ -62,6 +65,13 @@
                     <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
                     <p><b>Can I rotate only specific pages?</b><br>Yes, you can specify which pages to rotate by entering the page numbers in the input field. If you leave it blank, all pages will be rotated.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -78,6 +88,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const { PDFDocument, degrees } = window.PDFLib;

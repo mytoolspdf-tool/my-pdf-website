@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Edit text in a PDF by adding new text blocks. Our free online tool works in your browser, keeping your files secure." />
+    <title>Edit PDF Text | Free PDF Text Editor</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/edit-pdf-text.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container canvas { cursor: text; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Edit PDF Text</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="save-button" style="display: none;">Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Edit PDF Text</h1>
+                    <p>Add or replace text in your PDF. Click anywhere on the page to add a new text block. Note: This tool adds new text on top of the PDF; it does not edit the original text directly.</p>
+                    <h2>How to Edit PDF Text</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Click on a page to add a text box.</li>
+                        <li>Enter your text and press Enter.</li>
+                        <li>Click 'Save PDF' to download the updated file.</li>
+                    </ol>
+                    <h2>Edit PDF Text FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+        let edits = {}; // { pageNum: [ { x, y, text } ] }
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            edits = {};
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Click on a page to add text.`;
+                saveButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.dataset.pageNumber = i;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageContainer.appendChild(canvas);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupTextEditing(canvas, i);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupTextEditing(canvas, pageNum) {
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const text = prompt('Enter text to add:');
+                if (text) {
+                    if (!edits[pageNum]) edits[pageNum] = [];
+                    edits[pageNum].push({ x, y, text });
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.font = '24px Helvetica';
+                    ctx.fillText(text, x, y);
+                }
+            });
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Saving PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument, rgb, StandardFonts } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+                const pages = pdfDoc.getPages();
+                for (const pageNum in edits) {
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+                    const canvas = pageContainer.querySelector(`canvas[data-page-number='${pageNum}']`);
+                    const scale = height / canvas.height;
+
+                    for (const edit of edits[pageNum]) {
+                        page.drawText(edit.text, {
+                            x: edit.x * scale,
+                            y: height - edit.y * scale,
+                            font: font,
+                            size: 16, // Adjust size as needed
+                            color: rgb(0, 0, 0),
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'edited.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF saved and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

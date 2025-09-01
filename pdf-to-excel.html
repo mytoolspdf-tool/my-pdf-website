@@ -7,6 +7,9 @@
     <title>PDF to Excel Free | Convert PDF to Excel Online</title>
 
     <link rel="canonical" href="https://mytoolspdf.com/pdf-to-excel.html" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.png" type="image/png">
 </head>
@@ -14,6 +17,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -44,7 +50,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Convert PDF to Excel</h1>
+                    <h1 class="tool-page-title">Convert PDF to Excel</h1>
                     <p>Extract data from your PDF files into editable Excel spreadsheets. Our free online converter makes it easy to work with your data.</p>
                     <h2>How to Convert PDF to Excel</h2>
                     <ol>
@@ -57,6 +63,13 @@
                     <p><b>How accurate is the data extraction?</b><br>Our tool uses advanced algorithms to extract data, but complex PDFs may require minor cleanup. We recommend reviewing the output.</p>
                     <p><b>Is my data safe?</b><br>Yes, your files are uploaded over a secure connection and are deleted from our servers immediately after processing.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>

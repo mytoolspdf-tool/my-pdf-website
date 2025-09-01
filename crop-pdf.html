@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Crop pages in a PDF document by selecting the area you want to keep. Our free online tool works in your browser, keeping your files secure." />
+    <title>Crop PDF | Free PDF Page Cropper</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/crop-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container canvas { cursor: crosshair; }
+        .crop-box { border: 2px dashed #007bff; position: absolute; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Crop PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="crop-button" style="display: none;">Crop and Download PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Crop PDF Pages</h1>
+                    <p>Visually crop your PDF pages. Upload a PDF, draw a box on each page to select the area you want to keep, and download the cropped file.</p>
+                    <h2>How to Crop a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Draw a rectangle on each page to define the crop area.</li>
+                        <li>Click 'Crop and Download PDF' to get your new file.</li>
+                    </ol>
+                    <h2>Crop PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const pageContainer = document.getElementById('page-container');
+        const cropButton = document.getElementById('crop-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+        let cropBoxes = {};
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            cropBoxes = {};
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded with ${pdf.numPages} pages. Draw crop boxes.`;
+                cropButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.dataset.pageNumber = i;
+                    pageContainer.appendChild(canvas);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupCanvasDrawing(canvas, i, page);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupCanvasDrawing(canvas, pageNum, pdfPage) {
+            let startX, startY, isDrawing = false;
+            let cropBoxDiv = null;
+
+            canvas.addEventListener('mousedown', (e) => {
+                startX = e.offsetX;
+                startY = e.offsetY;
+                isDrawing = true;
+
+                // Remove existing crop box for this page if any
+                const existingCropBox = pageContainer.querySelector(`.crop-box[data-page-number='${pageNum}']`);
+                if (existingCropBox) existingCropBox.remove();
+
+                cropBoxDiv = document.createElement('div');
+                cropBoxDiv.className = 'crop-box';
+                cropBoxDiv.dataset.pageNumber = pageNum;
+                cropBoxDiv.style.left = `${canvas.offsetLeft + startX}px`;
+                cropBoxDiv.style.top = `${canvas.offsetTop + startY}px`;
+                pageContainer.appendChild(cropBoxDiv);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const width = e.offsetX - startX;
+                const height = e.offsetY - startY;
+                cropBoxDiv.style.width = `${Math.abs(width)}px`;
+                cropBoxDiv.style.height = `${Math.abs(height)}px`;
+                cropBoxDiv.style.left = `${canvas.offsetLeft + (width > 0 ? startX : e.offsetX)}px`;
+                cropBoxDiv.style.top = `${canvas.offsetTop + (height > 0 ? startY : e.offsetY)}px`;
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                isDrawing = false;
+                const endX = e.offsetX;
+                const endY = e.offsetY;
+                
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = pdfPage.view[2] / rect.width;
+                const scaleY = pdfPage.view[3] / rect.height;
+
+                cropBoxes[pageNum] = {
+                    x: Math.min(startX, endX) * scaleX,
+                    y: pdfPage.view[3] - (Math.max(startY, endY) * scaleY),
+                    width: Math.abs(endX - startX) * scaleX,
+                    height: Math.abs(endY - startY) * scaleY
+                };
+            });
+        }
+
+        cropButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Cropping PDF...';
+            cropButton.disabled = true;
+
+            const { PDFDocument } = PDFLib;
+            const existingPdfBytes = await pdfFile.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            const pages = pdfDoc.getPages();
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageNum = i + 1;
+                if (cropBoxes[pageNum]) {
+                    const page = pages[i];
+                    const box = cropBoxes[pageNum];
+                    page.setCropBox(box.x, box.y, box.width, box.height);
+                }
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            downloadFile(pdfBytes, 'cropped.pdf', 'application/pdf');
+            statusArea.textContent = 'PDF cropped and downloaded.';
+            cropButton.disabled = false;
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

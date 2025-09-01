@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Highlight text in your PDF by drawing a box over it. Our free online tool works in your browser, keeping your files secure." />
+    <title>Highlight PDF Text | Free PDF Highlighter</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/highlight-pdf-text.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #page-container canvas { cursor: crosshair; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Highlight PDF Text</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="save-button" style="display: none;">Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Highlight PDF Text</h1>
+                    <p>Easily highlight text in your PDF. Just draw a rectangle over the text you want to highlight, and it will be marked with a semi-transparent yellow color.</p>
+                    <h2>How to Highlight a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Draw a rectangle over the text you want to highlight.</li>
+                        <li>Click 'Save PDF' to download the updated file.</li>
+                    </ol>
+                    <h2>Highlight PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        let pdfFile = null;
+        let highlights = {}; // { pageNum: [ { x, y, width, height } ] }
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            highlights = {};
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Draw on a page to highlight text.`;
+                saveButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.dataset.pageNumber = i;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageContainer.appendChild(canvas);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupHighlightDrawing(canvas, i);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupHighlightDrawing(canvas, pageNum) {
+            let startX, startY, isDrawing = false;
+
+            canvas.addEventListener('mousedown', (e) => {
+                startX = e.offsetX;
+                startY = e.offsetY;
+                isDrawing = true;
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (!isDrawing) return;
+                isDrawing = false;
+                const endX = e.offsetX;
+                const endY = e.offsetY;
+
+                if (!highlights[pageNum]) highlights[pageNum] = [];
+                const highlight = {
+                    x: Math.min(startX, endX),
+                    y: Math.min(startY, endY),
+                    width: Math.abs(endX - startX),
+                    height: Math.abs(endY - startY),
+                };
+                highlights[pageNum].push(highlight);
+
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.fillRect(highlight.x, highlight.y, highlight.width, highlight.height);
+            });
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Saving PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument, rgb } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+                const pages = pdfDoc.getPages();
+                for (const pageNum in highlights) {
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+                    const canvas = pageContainer.querySelector(`canvas[data-page-number='${pageNum}']`);
+                    const scale = height / canvas.height;
+
+                    for (const highlight of highlights[pageNum]) {
+                        page.drawRectangle({
+                            x: highlight.x * scale,
+                            y: height - (highlight.y * scale) - (highlight.height * scale),
+                            width: highlight.width * scale,
+                            height: highlight.height * scale,
+                            color: rgb(1, 1, 0),
+                            opacity: 0.5,
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'highlighted.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF saved and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -14,6 +14,9 @@
     <header class="header">
         <div class="container">
             <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
             <nav class="main-nav">
                 <a href="index.html">Home</a>
                 <a href="tools.html">All Tools</a>
@@ -44,7 +47,7 @@
                     <div id="status-area" style="margin-top: 20px;"></div>
                 </div>
                 <div class="tool-content container">
-                    <h1>Add a Password to Your PDF</h1>
+                    <h1 class="tool-page-title">Add a Password to Your PDF</h1>
                     <p>Add a password to your PDF files with our free online tool. All processing is done in your browser, so your files are never uploaded to a server.</p>
                     <h2>How to Protect a PDF</h2>
                     <ol>
@@ -58,6 +61,13 @@
                     <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
                     <p><b>What happens if I forget my password?</b><br>We cannot recover your password, as the encryption is performed locally on your device. Make sure to store your password in a safe place.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
             </div>
         </section>
     </main>
@@ -74,6 +84,8 @@
         </div>
     </footer>
 
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {

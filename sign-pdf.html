@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sign your PDF document by drawing a signature or uploading an image. Our free online tool works in your browser." />
+    <title>Sign PDF | Free PDF Signature Tool</title>
+
+    <link rel="canonical" href="https://mytoolspdf.com/sign-pdf.html" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        #signature-pad { border: 1px solid #ccc; cursor: crosshair; }
+        #page-container canvas { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">MyToolsPDF</a>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for a tool...">
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="tools.html">All Tools</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="tools-section">
+            <div class="container tool-page-container">
+                <div class="tool-interface drowning-border">
+                    <h2>Sign PDF</h2>
+                    <div id="file-drop-zone"><p><b>Drag & Drop a PDF file here</b><br>or click to select</p></div>
+                    <input type="file" id="file-input" accept="application/pdf" hidden>
+                    
+                    <div id="signature-section" style="display: none; margin-top: 20px;">
+                        <h3>Create Signature</h3>
+                        <canvas id="signature-pad" width="400" height="200"></canvas><br>
+                        <button id="clear-signature">Clear</button>
+                        <p>OR</p>
+                        <input type="file" id="signature-image-input" accept="image/*">
+                        <button id="use-signature">Use Signature</button>
+                    </div>
+
+                    <div id="page-container" style="margin-top: 20px; position: relative;"></div>
+                    <button id="save-button" style="display: none;">Save PDF</button>
+                    <div id="status-area" style="margin-top: 20px;"></div>
+                </div>
+                <div class="tool-content container">
+                    <h1 class="tool-page-title">Sign PDF</h1>
+                    <p>Easily sign your PDF documents. Draw your signature or upload an image of it, then place it anywhere on the document.</p>
+                    <h2>How to Sign a PDF</h2>
+                    <ol>
+                        <li>Upload your PDF file.</li>
+                        <li>Draw your signature or upload a signature image.</li>
+                        <li>Click 'Use Signature' and then click on the page to place it.</li>
+                        <li>Click 'Save PDF' to download the signed document.</li>
+                    </ol>
+                    <h2>Sign PDF FAQs</h2>
+                    <p><b>Is my data safe?</b><br>Yes, your files are processed entirely in your browser. No data is ever sent to our servers, ensuring your privacy.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <div class="container">
+                <h2>Recommended Tools</h2>
+                <div class="tools-grid" id="recommended-tools"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <nav class="footer-nav">
+                <a href="about.html">About Us</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="contact.html">Contact Us</a>
+            </nav>
+            <p>&copy; 2025 MyToolsPDF. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="tools.js"></script>
+    <script src="script.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const signatureSection = document.getElementById('signature-section');
+        const signaturePad = document.getElementById('signature-pad');
+        const signatureImageInput = document.getElementById('signature-image-input');
+        const clearSignatureButton = document.getElementById('clear-signature');
+        const useSignatureButton = document.getElementById('use-signature');
+        const pageContainer = document.getElementById('page-container');
+        const saveButton = document.getElementById('save-button');
+        const statusArea = document.getElementById('status-area');
+        
+        let pdfFile = null;
+        let signatureImage = null;
+        let signatures = {}; // { pageNum: [ { x, y, width, height } ] }
+
+        const sigCtx = signaturePad.getContext('2d');
+        let isDrawing = false;
+
+        signaturePad.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            sigCtx.beginPath();
+            sigCtx.moveTo(e.offsetX, e.offsetY);
+        });
+        signaturePad.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            sigCtx.lineTo(e.offsetX, e.offsetY);
+            sigCtx.stroke();
+        });
+        signaturePad.addEventListener('mouseup', () => isDrawing = false);
+        signaturePad.addEventListener('mouseout', () => isDrawing = false);
+        clearSignatureButton.addEventListener('click', () => sigCtx.clearRect(0, 0, signaturePad.width, signaturePad.height));
+
+        useSignatureButton.addEventListener('click', () => {
+            if (signatureImageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => signatureImage = e.target.result;
+                reader.readAsDataURL(signatureImageInput.files[0]);
+            } else {
+                signatureImage = signaturePad.toDataURL();
+            }
+            statusArea.textContent = 'Signature captured. Click on a page to place it.';
+        });
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        async function handleFile(file) {
+            if (!file || file.type !== 'application/pdf') {
+                statusArea.textContent = 'Please select a valid PDF file.';
+                return;
+            }
+            pdfFile = file;
+            signatureSection.style.display = 'block';
+            statusArea.textContent = 'Loading PDF...';
+            pageContainer.innerHTML = '';
+            signatures = {};
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                statusArea.textContent = `PDF loaded. Create your signature and place it.`;
+                saveButton.style.display = 'block';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.dataset.pageNumber = i;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageContainer.appendChild(canvas);
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    setupSignaturePlacement(canvas, i);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function setupSignaturePlacement(canvas, pageNum) {
+            canvas.addEventListener('click', (e) => {
+                if (!signatureImage) {
+                    statusArea.textContent = 'Please create or upload a signature first.';
+                    return;
+                }
+                const x = e.offsetX;
+                const y = e.offsetY;
+                if (!signatures[pageNum]) signatures[pageNum] = [];
+                signatures[pageNum].push({ x, y, width: 100, height: 50 }); // Default size
+
+                const img = new Image();
+                img.onload = () => {
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, x, y, 100, 50);
+                };
+                img.src = signatureImage;
+            });
+        }
+
+        saveButton.addEventListener('click', async () => {
+            if (!pdfFile) return;
+            statusArea.textContent = 'Saving PDF...';
+            saveButton.disabled = true;
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const existingPdfBytes = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                const signatureBytes = await fetch(signatureImage).then(res => res.arrayBuffer());
+                const signaturePng = await pdfDoc.embedPng(signatureBytes);
+
+                const pages = pdfDoc.getPages();
+                for (const pageNum in signatures) {
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+                    const canvas = pageContainer.querySelector(`canvas[data-page-number='${pageNum}']`);
+                    const scale = height / canvas.height;
+
+                    for (const sig of signatures[pageNum]) {
+                        page.drawImage(signaturePng, {
+                            x: sig.x * scale,
+                            y: height - (sig.y * scale) - (sig.height * scale),
+                            width: sig.width * scale,
+                            height: sig.height * scale,
+                        });
+                    }
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                downloadFile(pdfBytes, 'signed.pdf', 'application/pdf');
+                statusArea.textContent = 'PDF saved and downloaded.';
+            } catch (error) {
+                console.error('Error:', error);
+                statusArea.textContent = 'An error occurred while saving: ' + error.message;
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        function downloadFile(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+    </script>
+</body>
+</html>
