@@ -71,7 +71,7 @@
     </script>
 
     <!-- Client-Side Library for this tool only -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="tools.js"></script>
     <script src="script.js"></script>
 </head>
@@ -626,7 +626,7 @@
         const fileList = document.getElementById('file-list');
         const processButton = document.getElementById('process-button');
         const statusArea = document.getElementById('status-area');
-        const textToAddInput = document.getElementById('text-to-add');
+        const textToAddInput = document.getElementById('edit-text');
         let selectedFile = null;
 
         fileDropZone.addEventListener('click', () => fileInput.click());
@@ -654,7 +654,11 @@
         }
 
         processButton.addEventListener('click', async () => {
-            if (!selectedFile || !textToAddInput.value) {
+            const textInput = document.getElementById('edit-text');
+            const pageInput = document.getElementById('edit-page');
+            const sizeInput = document.getElementById('edit-size');
+            
+            if (!selectedFile || !textInput.value) {
                 statusArea.textContent = 'Please select a file and enter the text to add.';
                 return;
             }
@@ -666,13 +670,23 @@
                 const fileBuffer = await selectedFile.arrayBuffer();
                 const pdfDoc = await PDFDocument.load(fileBuffer);
                 const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-                const firstPage = pdfDoc.getPages()[0];
-                const { width, height } = firstPage.getSize();
+                
+                const pageNumber = parseInt(pageInput.value) - 1; // Convert to 0-based index
+                const fontSize = parseInt(sizeInput.value) || 24;
+                
+                const pages = pdfDoc.getPages();
+                if (pageNumber < 0 || pageNumber >= pages.length) {
+                    statusArea.textContent = `Invalid page number. Document has ${pages.length} pages.`;
+                    return;
+                }
+                
+                const targetPage = pages[pageNumber];
+                const { width, height } = targetPage.getSize();
 
-                firstPage.drawText(textToAddInput.value, {
+                targetPage.drawText(textInput.value, {
                     x: 50,
                     y: height - 50,
-                    size: 24,
+                    size: fontSize,
                     font,
                     color: rgb(0, 0, 0),
                 });
